@@ -8,6 +8,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.time.Duration;
 
@@ -19,13 +20,16 @@ public class SeleniumTest {
 
     @BeforeAll
     public static void setUp() {
-        // Descarga automáticamente el driver correcto
         WebDriverManager.chromedriver().setup();
 
-        driver = new ChromeDriver();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--user-data-dir=/tmp/unique-profile-" + System.currentTimeMillis());
 
-        // Abrir la aplicación web (frontend React)
+        driver = new ChromeDriver(options);
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
         driver.get("http://localhost:5173");
     }
 

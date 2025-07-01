@@ -31,11 +31,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Compilar backend
+      # Instalar Google Chrome
+      - name: Install Google Chrome
+        run: |
+          sudo apt update
+          sudo apt install -y wget
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+          rm google-chrome-stable_current_amd64.deb
+
+      # Build backend
       - name: Build backend
         run: mvn -f backend/pom.xml clean install -DskipTests
 
-      # Pruebas Unitarias
+      # Run Unit Tests
       - name: Run Unit Tests
         run: mvn -f backend/pom.xml test
 
@@ -48,20 +57,10 @@ jobs:
             -Dsonar.organization=clariveljn
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.projectBaseDir=backend
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # Instalar Google Chrome para Selenium
-      - name: Install Google Chrome
-        run: |
-          sudo apt update
-          sudo apt install -y wget
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install -y ./google-chrome-stable_current_amd64.deb
-          rm google-chrome-stable_current_amd64.deb
-
-      # Pruebas Selenium
+      # Ejecutar pruebas Selenium
       - name: Run Selenium Tests
         run: mvn -f pruebas-selenium/pom.xml test
 
@@ -82,4 +81,5 @@ jobs:
         with:
           name: jmeter-results
           path: pruebas-jmeter/resultados.jtl
+
 
