@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test:
+  build-test:
     runs-on: ubuntu-latest
 
     services:
@@ -22,7 +22,7 @@ jobs:
           --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=5
 
     steps:
       - name: Checkout code
@@ -34,26 +34,53 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Build and test backend (JUnit)
+      - name: Build backend and run unit tests (JUnit)
         run: |
           cd backend
           mvn clean install
 
+      - name: Run backend in background
+        run: |
+          cd backend
+          nohup mvn spring-boot:run &
+          sleep 30 # Espera para asegurar que el backend esté levantado
+
+      # Instalar Chrome para Selenium
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg2
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+
+      # Instalar ChromeDriver
+      - name: Install ChromeDriver
+        run: |
+          sudo apt-get install -y unzip
+          LATEST=$(curl -sSL https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+          wget https://chromedriver.storage.googleapis.com/${LATEST}/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+          chromedriver --version
+
       - name: Run Selenium tests
         run: |
           cd pruebas-selenium
-          mvn test
+          mvn clean test
 
-      - name: Run JMeter tests
+      - name: Install JMeter
         run: |
           sudo apt-get update
           sudo apt-get install -y openjdk-21-jre wget
           wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
           tar -xvzf apache-jmeter-5.6.3.tgz
+
+      - name: Run JMeter tests
+        run: |
           ./apache-jmeter-5.6.3/bin/jmeter -n -t pruebas-jmeter/test.jmx -l result.jtl
 
       - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@master
+        uses: sonarsource/sonarqube-scan-action@v1.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
