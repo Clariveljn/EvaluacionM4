@@ -49,19 +49,31 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '20' # ✅ Compatible con Vite 7
 
       - name: Run frontend in background
         run: |
           cd healthtrack-frontend
           npm install
-          nohup npm run dev -- --host > frontend.log 2>&1 &
-          sleep 70
+          nohup npm run dev -- --host 0.0.0.0 --port 5173 > frontend.log 2>&1 &
+          sleep 40
           tail -n 30 frontend.log
 
       - name: Check frontend port
         run: |
           ss -tulpn | grep 5173 || echo "Puerto 5173 no está escuchando"
+
+      - name: Verify frontend is responding
+        run: |
+          for i in {1..5}; do
+            if curl -s http://127.0.0.1:5173 > /dev/null; then
+              echo "Frontend is up"
+              break
+            else
+              echo "Waiting for frontend..."
+              sleep 5
+            fi
+          done
 
       # Instalar Chrome para Selenium
       - name: Install Chrome
@@ -102,3 +114,4 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+

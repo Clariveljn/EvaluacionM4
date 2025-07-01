@@ -6,45 +6,48 @@ const api = axios.create({
 });
 
 function Registro() {
-    const [nombre, setNombre] = useState("");
-    const [peso, setPeso] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [peso, setPeso] = useState("");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            await api.post("/api/usuarios/registrar", {
-                nombre,
-                peso: parseFloat(peso),
-            });
-            alert("Usuario registrado con éxito.");
-        } catch (error) {
-            alert("Error al registrar: " + (error.response?.data?.message || error.message));
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/api/usuarios/registrar", {
+        nombre,
+        peso: parseFloat(peso),
+      });
+      alert("Usuario registrado con éxito.");
+    } catch (error) {
+      alert("Error al registrar: " + (error.response?.data?.message || error.message));
+    }
+  };
 
-    return (
-        <div>
-            <h2>Registro de Usuario</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    placeholder="Nombre"
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    required
-                />
-                <input
-                    type="number"
-                    placeholder="Peso"
-                    value={peso}
-                    onChange={(e) => setPeso(e.target.value)}
-                    required
-                />
-                <button type="submit">Registrar</button>
-            </form>
-        </div>
-    );
+  return (
+    <div>
+      <h2>Registro de Usuario</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          id="nombre-registro"
+          type="text"
+          placeholder="Nombre"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          required
+        />
+        <input
+          id="peso-registro"
+          type="number"
+          placeholder="Peso"
+          value={peso}
+          onChange={(e) => setPeso(e.target.value)}
+          required
+        />
+        <button type="submit" id="boton-registrar">Registrar</button>
+      </form>
+    </div>
+  );
 }
 
 export default Registro;
+
 
