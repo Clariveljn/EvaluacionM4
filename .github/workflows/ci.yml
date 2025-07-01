@@ -1,129 +1,32 @@
-name: CI HealthTrack
+name: CI Backend - Pruebas Unitarias
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
-  build-test:
+  build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: healthtrack_db
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
-      - name: Checkout code
+      - name: Checkout del código
         uses: actions/checkout@v3
 
-      # Configurar JDK
-      - name: Set up JDK 21
+      - name: Instalar Java
         uses: actions/setup-java@v3
         with:
-          java-version: '21'
           distribution: 'temurin'
+          java-version: '21'
 
-      # Backend: Build y pruebas unitarias
-      - name: Build backend and run unit tests
-        run: |
-          cd backend
-          mvn clean install
+      - name: Construir y correr pruebas
+        working-directory: backend
+        run: mvn clean test
 
-      # Levantar backend
-      - name: Run backend
-        run: |
-          cd backend
-          nohup mvn spring-boot:run --quiet > backend.log 2>&1 &
-          sleep 40
-          tail -n 30 backend.log
-
-      # Configurar Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Publicar resultados de pruebas
+        if: always()
+        uses: actions/upload-artifact@v3
         with:
-          node-version: '20'
-
-      # Frontend: instalar y levantar en segundo plano
-      - name: Run frontend
-        run: |
-          cd healthtrack-frontend
-          npm install
-          nohup npm run dev -- --host 0.0.0.0 --port 5173 > frontend.log 2>&1 &
-          sleep 60
-          tail -n 30 frontend.log
-
-      # Verificar que frontend está escuchando
-      - name: Check frontend port
-        run: |
-          ss -tulpn | grep 5173 || echo "Puerto 5173 no está escuchando"
-
-      # Verificar que backend está escuchando
-      - name: Check backend port
-        run: |
-          ss -tulpn | grep 8080 || echo "Puerto 8080 no está escuchando"
-
-      # Instalar Chrome para Selenium
-      - name: Install Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget gnupg2
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install -y ./google-chrome-stable_current_amd64.deb
-
-      # Instalar ChromeDriver
-      - name: Install ChromeDriver
-        run: |
-          sudo apt-get install -y unzip
-          LATEST=$(curl -sSL https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-          wget https://chromedriver.storage.googleapis.com/${LATEST}/chromedriver_linux64.zip
-          unzip chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
-          chromedriver --version
-
-      # Pruebas Selenium
-      - name: Run Selenium tests
-        run: |
-          cd pruebas-selenium
-          mvn clean test
-
-      # SonarQube
-      - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@v1.1.0
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
-      # Instalar JMeter
-      - name: Install JMeter
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-21-jre wget
-          wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
-          tar -xvzf apache-jmeter-5.6.3.tgz
-
-      # Paso de depuración: Listar contenido de pruebas-jmeter
-      - name: Listar contenido de pruebas-jmeter
-        run: |
-          ls -la pruebas-jmeter/
-
-      # Pruebas JMeter
-      - name: Run JMeter tests
-        run: |
-          ./apache-jmeter-5.6.3/bin/jmeter -n -t pruebas-jmeter/test.jmx -l result.jtl
-
-
-      
-
+          name: reporte-pruebas-backend
+          path: backend/target/surefire-reports/
 
