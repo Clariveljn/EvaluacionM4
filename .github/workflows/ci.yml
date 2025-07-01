@@ -15,7 +15,7 @@ jobs:
         image: mysql:5.7
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: healthtrack
+          MYSQL_DATABASE: healthtrack_db
         ports:
           - 3306:3306
         options: >-
@@ -92,19 +92,6 @@ jobs:
           sudo mv chromedriver /usr/local/bin/
           chromedriver --version
 
-      # Instalar JMeter
-      - name: Install JMeter
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-21-jre wget
-          wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
-          tar -xvzf apache-jmeter-5.6.3.tgz
-
-      # Pruebas JMeter
-      - name: Run JMeter tests
-        run: |
-          ./apache-jmeter-5.6.3/bin/jmeter -n -t pruebas-jmeter/test.jmx -l result.jtl
-
       # SonarQube
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@v1.1.0
@@ -118,7 +105,24 @@ jobs:
           cd pruebas-selenium
           mvn clean test
 
-    
+      # Instalar JMeter
+      - name: Install JMeter
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-21-jre wget
+          wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
+          tar -xvzf apache-jmeter-5.6.3.tgz
+
+      # Paso de depuración: Listar contenido de pruebas-jmeter
+      - name: Listar contenido de pruebas-jmeter
+        run: |
+          ls -la pruebas-jmeter/
+
+      # Pruebas JMeter
+      - name: Run JMeter tests
+        run: |
+          ./apache-jmeter-5.6.3/bin/jmeter -n -t pruebas-jmeter/test.jmx -l result.jtl
+
 
       
 
