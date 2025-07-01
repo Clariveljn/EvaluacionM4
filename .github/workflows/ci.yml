@@ -1,4 +1,4 @@
-name: CI Backend - Pruebas Unitarias
+name: CI Backend - Pruebas Unitarias y de Regresión
 
 on:
   push:
@@ -6,8 +6,9 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  unit-tests:
     runs-on: ubuntu-latest
+    name: Pruebas Unitarias
 
     steps:
       - name: Checkout del código
@@ -19,15 +20,40 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Construir y correr pruebas
+      - name: Ejecutar Pruebas Unitarias
         working-directory: backend
         run: mvn clean test
 
-      - name: Publicar resultados de pruebas
+      - name: Publicar Reporte de Pruebas Unitarias
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: reporte-pruebas-backend
+          name: reporte-pruebas-unitarias
           path: backend/target/surefire-reports/
 
 
+  regression-tests:
+    runs-on: ubuntu-latest
+    name: Pruebas de Regresión
+    needs: unit-tests
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Instalar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Ejecutar Pruebas de Regresión
+        working-directory: backend
+        run: mvn clean verify -Pregression
+
+      - name: Publicar Reporte de Pruebas de Regresión
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-pruebas-regresion
+          path: backend/target/surefire-reports/
