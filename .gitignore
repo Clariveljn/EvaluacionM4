@@ -1,0 +1,38 @@
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Eclipse/IntelliJ IDEA
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Node / React
+node_modules/
+build/
+dist/
+
+# Pruebas Selenium (si genera archivos)
+*.png
+*.jpg
+*.mp4
+
+# JMeter (archivos temporales o resultados)
+*.jtl
+jmeter.log
+
+# Otros
+*.swp
+*.tmp
