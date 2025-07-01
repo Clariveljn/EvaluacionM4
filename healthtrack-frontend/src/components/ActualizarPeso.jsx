@@ -1,6 +1,10 @@
 import { useState } from "react";
 import axios from "axios";
 
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL
+});
+
 function ActualizarPeso() {
     const [nombre, setNombre] = useState("");
     const [nuevoPeso, setNuevoPeso] = useState("");
@@ -8,10 +12,10 @@ function ActualizarPeso() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.put(`http://localhost:8080/api/usuarios/actualizar/${nombre}?nuevoPeso=${nuevoPeso}`);
+            await api.put(`/api/usuarios/actualizar/${nombre}?nuevoPeso=${nuevoPeso}`);
             alert("Peso actualizado con éxito.");
         } catch (error) {
-            alert("Error al actualizar: " + error.response.data.message);
+            alert("Error al actualizar: " + (error.response?.data?.message || error.message));
         }
     };
 
@@ -19,8 +23,20 @@ function ActualizarPeso() {
         <div>
             <h2>Actualizar Peso</h2>
             <form onSubmit={handleSubmit}>
-                <input type="text" placeholder="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-                <input type="number" placeholder="Nuevo Peso" value={nuevoPeso} onChange={(e) => setNuevoPeso(e.target.value)} required />
+                <input
+                    type="text"
+                    placeholder="Nombre"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    required
+                />
+                <input
+                    type="number"
+                    placeholder="Nuevo Peso"
+                    value={nuevoPeso}
+                    onChange={(e) => setNuevoPeso(e.target.value)}
+                    required
+                />
                 <button type="submit">Actualizar</button>
             </form>
         </div>
@@ -28,3 +44,4 @@ function ActualizarPeso() {
 }
 
 export default ActualizarPeso;
+

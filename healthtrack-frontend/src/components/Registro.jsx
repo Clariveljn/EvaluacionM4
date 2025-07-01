@@ -1,6 +1,10 @@
 import { useState } from "react";
 import axios from "axios";
 
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL
+});
+
 function Registro() {
     const [nombre, setNombre] = useState("");
     const [peso, setPeso] = useState("");
@@ -8,13 +12,13 @@ function Registro() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post("http://localhost:8080/api/usuarios/registrar", {
+            await api.post("/api/usuarios/registrar", {
                 nombre,
                 peso: parseFloat(peso),
             });
             alert("Usuario registrado con éxito.");
         } catch (error) {
-            alert("Error al registrar: " + error.response.data.message);
+            alert("Error al registrar: " + (error.response?.data?.message || error.message));
         }
     };
 
@@ -22,8 +26,20 @@ function Registro() {
         <div>
             <h2>Registro de Usuario</h2>
             <form onSubmit={handleSubmit}>
-                <input type="text" placeholder="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-                <input type="number" placeholder="Peso" value={peso} onChange={(e) => setPeso(e.target.value)} required />
+                <input
+                    type="text"
+                    placeholder="Nombre"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    required
+                />
+                <input
+                    type="number"
+                    placeholder="Peso"
+                    value={peso}
+                    onChange={(e) => setPeso(e.target.value)}
+                    required
+                />
                 <button type="submit">Registrar</button>
             </form>
         </div>
@@ -31,3 +47,4 @@ function Registro() {
 }
 
 export default Registro;
+

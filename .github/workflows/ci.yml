@@ -45,6 +45,18 @@ jobs:
           nohup mvn spring-boot:run &
           sleep 30 # Espera para asegurar que el backend esté levantado
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Run frontend in background
+        run: |
+          cd healthtrack-frontend
+          npm install
+          npm run dev &
+          sleep 20
+
       # Instalar Chrome para Selenium
       - name: Install Chrome
         run: |
