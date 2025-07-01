@@ -1,4 +1,4 @@
-name: CI Pipeline HealthTrack (SonarQube local)
+name: CI Pipeline HealthTrack
 
 on:
   push:
@@ -10,27 +10,19 @@ jobs:
   build-test-analyze:
     runs-on: ubuntu-latest
 
-    services:
-      sonarqube:
-        image: sonarqube:9.9-community
-        ports:
-          - 9000:9000
-        options: >-
-          --health-cmd="curl -f http://localhost:9000/api/system/health || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
+      # Clonar repositorio
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Configurar JDK 21
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '21'
 
+      # Cache de dependencias Maven para acelerar builds
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -39,34 +31,27 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build backend (skip tests)
+      # Build backend sin tests
+      - name: Build backend
         run: mvn -f backend/pom.xml clean install -DskipTests
 
+      # Ejecutar pruebas unitarias en backend
       - name: Run Unit Tests
         run: mvn -f backend/pom.xml test
 
-      - name: Wait for SonarQube to be ready
+      # Análisis SonarCloud
+      - name: SonarCloud Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          for i in {1..30}; do
-            STATUS=$(curl -s http://localhost:9000/api/system/health | jq -r .status)
-            if [ "$STATUS" = "UP" ]; then
-              echo "SonarQube is up!"
-              exit 0
-            fi
-            echo "Waiting for SonarQube..."
-            sleep 10
-          done
-          echo "SonarQube did not start in time"
-          exit 1
+          mvn sonar:sonar \
+            -Dsonar.projectKey=Clariveljn_EvaluacionM4 \
+            -Dsonar.organization=clariveljn \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=$SONAR_TOKEN
 
-      - name: Run SonarQube analysis
-        run: mvn -f backend/pom.xml sonar:sonar \
-          -Dsonar.projectKey=Clariveljn_EvaluacionM4 \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=admin \
-          -Dsonar.password=admin
-
-      - name: Install Google Chrome for Selenium
+      # Instalar Google Chrome para Selenium
+      - name: Install Google Chrome
         run: |
           sudo apt update
           sudo apt install -y wget
@@ -74,18 +59,22 @@ jobs:
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
           rm google-chrome-stable_current_amd64.deb
 
+      # Ejecutar pruebas Selenium
       - name: Run Selenium Tests
         run: mvn -f pruebas-selenium/pom.xml test
 
+      # Instalar JMeter para pruebas de rendimiento
       - name: Install JMeter
         run: |
           sudo apt update
           sudo apt install -y jmeter
 
-      - name: Run JMeter Tests
+      # Ejecutar pruebas JMeter
+      - name: Run JMeter Test
         run: |
           jmeter -n -t pruebas-jmeter/healthtrack.jmx -l pruebas-jmeter/resultados.jtl -j pruebas-jmeter/jmeter.log
 
+      # Subir resultados JMeter como artefactos del workflow
       - name: Upload JMeter Results
         uses: actions/upload-artifact@v4
         with:
