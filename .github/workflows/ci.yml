@@ -1,78 +1,59 @@
-name: CI Pipeline HealthTrack
+name: CI HealthTrack
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
-  build-test:
+  build-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: healthtrack
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
     steps:
-      # Clonar repositorio
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # Configurar JDK
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
           java-version: '21'
+          distribution: 'temurin'
 
-      # Cache Maven
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      # Build backend
-      - name: Build backend
-        run: mvn -f backend/pom.xml clean install -DskipTests
-
-      # Ejecutar pruebas unitarias
-      - name: Run Unit Tests
-        run: mvn -f backend/pom.xml test
-
-      # Instalar Google Chrome para Selenium
-      - name: Install Google Chrome
+      - name: Build and test backend (JUnit)
         run: |
-          sudo apt update
-          sudo apt install -y wget
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install -y ./google-chrome-stable_current_amd64.deb
-          rm google-chrome-stable_current_amd64.deb
+          cd backend
+          ./mvnw clean install
 
-      # Ejecutar pruebas Selenium
-      - name: Run Selenium Tests
-        run: mvn -f pruebas-selenium/pom.xml test
-
-      # Instalar JMeter
-      - name: Install JMeter
+      - name: Run Selenium tests
         run: |
-          sudo apt update
-          sudo apt install -y jmeter
+          cd pruebas-selenium
+          mvn test
 
-      # Ejecutar pruebas de rendimiento con JMeter
-      - name: Run JMeter Test
+      - name: Run JMeter tests
         run: |
-          jmeter -n -t pruebas-jmeter/healthtrack.jmx \
-            -l pruebas-jmeter/resultados.jtl \
-            -j pruebas-jmeter/jmeter.log
+          sudo apt-get update
+          sudo apt-get install -y openjdk-21-jre wget
+          wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
+          tar -xvzf apache-jmeter-5.6.3.tgz
+          ./apache-jmeter-5.6.3/bin/jmeter -n -t pruebas-jmeter/test.jmx -l result.jtl
 
-      # Subir resultados JMeter como artefacto
-      - name: Upload JMeter Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: jmeter-results
-          path: pruebas-jmeter/resultados.jtl
-
-
-
-
-
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
