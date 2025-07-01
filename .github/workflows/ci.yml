@@ -7,22 +7,19 @@ on:
     branches: [main]
 
 jobs:
-  build-test:
+  build-test-analyze:
     runs-on: ubuntu-latest
 
     steps:
-      # Clonar repositorio
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Configurar JDK 21
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # Cache Maven
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -31,7 +28,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Instalar Google Chrome (para Selenium)
+      - name: Build backend
+        run: mvn -f backend/pom.xml clean install -DskipTests
+
+      - name: Run Unit Tests
+        run: mvn -f backend/pom.xml test
+
+      - name: Check Sonar Token
+        run: echo "HAS_SONAR_TOKEN=${{ secrets.SONAR_TOKEN != '' }}" >> $GITHUB_ENV
+
+      - name: SonarCloud Scan
+        if: env.HAS_SONAR_TOKEN == 'true'
+        run: mvn -f backend/pom.xml sonar:sonar \
+          -Dsonar.projectKey=Clariveljn_EvaluacionM4 \
+          -Dsonar.organization=clariveljn \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
       - name: Install Google Chrome
         run: |
           sudo apt update
@@ -40,49 +53,24 @@ jobs:
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
           rm google-chrome-stable_current_amd64.deb
 
-      # Build backend (sin correr tests todavía)
-      - name: Build Backend
-        run: mvn -f backend/pom.xml clean install -DskipTests
-
-      # Correr pruebas unitarias
-      - name: Run Unit Tests
-        run: mvn -f backend/pom.xml test
-
-      # Análisis estático con SonarCloud
-      - name: SonarCloud Scan
-        if: ${{ secrets.SONAR_TOKEN != '' }}
-        run: mvn -f backend/pom.xml sonar:sonar \
-          -Dsonar.projectKey=Clariveljn_EvaluacionM4 \
-          -Dsonar.organization=clariveljn \
-          -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-
-      # Correr pruebas Selenium
       - name: Run Selenium Tests
         run: mvn -f pruebas-selenium/pom.xml test
 
-      # Instalar JMeter
       - name: Install JMeter
         run: |
           sudo apt update
           sudo apt install -y jmeter
 
-      # Ejecutar pruebas JMeter
-      - name: Run JMeter Performance Tests
+      - name: Run JMeter Test
         run: |
-          jmeter -n -t pruebas-jmeter/healthtrack.jmx \
-          -l pruebas-jmeter/resultados.jtl \
-          -j pruebas-jmeter/jmeter.log
+          jmeter -n -t pruebas-jmeter/healthtrack.jmx -l pruebas-jmeter/resultados.jtl -j pruebas-jmeter/jmeter.log
 
-      # Subir resultados de JMeter como artefacto
       - name: Upload JMeter Results
         uses: actions/upload-artifact@v4
         with:
           name: jmeter-results
           path: pruebas-jmeter/resultados.jtl
+
 
 
 
