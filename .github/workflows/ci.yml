@@ -42,8 +42,9 @@ jobs:
       - name: Run backend in background
         run: |
           cd backend
-          nohup mvn spring-boot:run &
-          sleep 30 # Espera para asegurar que el backend esté levantado
+          nohup mvn spring-boot:run > backend.log 2>&1 &
+          sleep 40
+          tail -n 20 backend.log
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -54,8 +55,13 @@ jobs:
         run: |
           cd healthtrack-frontend
           npm install
-          npm run dev &
-          sleep 20
+          nohup npm run dev > frontend.log 2>&1 &
+          sleep 40
+          tail -n 20 frontend.log
+
+      - name: Check frontend port
+        run: |
+          ss -tulpn | grep 5173 || echo "Puerto 5173 no está escuchando"
 
       # Instalar Chrome para Selenium
       - name: Install Chrome
