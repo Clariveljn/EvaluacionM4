@@ -40,9 +40,9 @@ jobs:
         working-directory: backend
         run: mvn test
 
-      # ✅ Análisis SonarCloud
+      # ✅ Análisis SonarCloud (versión actualizada)
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v1.10
+        uses: sonarsource/sonarcloud-github-action@v2.0.0
         with:
           args: >
             -Dsonar.projectKey=clariveljeldres_evaluacionm4
@@ -76,9 +76,10 @@ jobs:
         run: |
           jmeter -n -t healthtrack.jmx -l resultados.jtl -j jmeter.log
 
-      # ✅ Subir resultados de JMeter como artefacto
+      # ✅ Subir resultados de JMeter como artefacto (versión actualizada)
       - name: Upload JMeter Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: jmeter-results
           path: pruebas-jmeter/resultados.jtl
+
