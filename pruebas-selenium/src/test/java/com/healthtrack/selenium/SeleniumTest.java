@@ -1,5 +1,6 @@
 package com.healthtrack.selenium;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -18,9 +19,8 @@ public class SeleniumTest {
 
     @BeforeAll
     public static void setUp() {
-        // Ruta al ChromeDriver
-        System.setProperty("webdriver.chrome.driver", "driver/chromedriver.exe"); // Windows
-        // System.setProperty("webdriver.chrome.driver", "driver/chromedriver"); // Linux/Mac
+        // Descarga automáticamente el driver correcto
+        WebDriverManager.chromedriver().setup();
 
         driver = new ChromeDriver();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
@@ -64,6 +64,9 @@ public class SeleniumTest {
 
     @AfterAll
     public static void tearDown() {
-        driver.quit();
+        if (driver != null) {
+            driver.quit();
+        }
     }
 }
+
