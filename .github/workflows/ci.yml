@@ -1,0 +1,84 @@
+name: CI Pipeline HealthTrack
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test-analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # ✅ Configurar JDK
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # ✅ Cache Maven
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      # ✅ Compilar el backend
+      - name: Build with Maven
+        working-directory: backend
+        run: mvn clean install -DskipTests
+
+      # ✅ Ejecutar pruebas unitarias
+      - name: Run Unit Tests
+        working-directory: backend
+        run: mvn test
+
+      # ✅ Análisis SonarCloud
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v1.10
+        with:
+          args: >
+            -Dsonar.projectKey=clariveljeldres_evaluacionm4
+            -Dsonar.organization=clariveljeldres
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      # ✅ Instalar Google Chrome para Selenium
+      - name: Install Google Chrome
+        run: |
+          sudo apt update
+          sudo apt install -y wget
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+          rm google-chrome-stable_current_amd64.deb
+
+      # ✅ Ejecutar pruebas Selenium
+      - name: Run Selenium Tests
+        working-directory: pruebas-selenium
+        run: mvn test
+
+      # ✅ Instalar JMeter
+      - name: Install JMeter
+        run: |
+          sudo apt update
+          sudo apt install -y jmeter
+
+      # ✅ Ejecutar pruebas de rendimiento con JMeter
+      - name: Run JMeter Test
+        working-directory: pruebas-jmeter
+        run: |
+          jmeter -n -t healthtrack.jmx -l resultados.jtl -j jmeter.log
+
+      # ✅ Subir resultados de JMeter como artefacto
+      - name: Upload JMeter Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: jmeter-results
+          path: pruebas-jmeter/resultados.jtl
