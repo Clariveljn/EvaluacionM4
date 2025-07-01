@@ -55,9 +55,9 @@ jobs:
         run: |
           cd healthtrack-frontend
           npm install
-          nohup npm run dev > frontend.log 2>&1 &
-          sleep 80
-          tail -n 20 frontend.log
+          nohup npm run dev -- --host > frontend.log 2>&1 &
+          sleep 70
+          tail -n 30 frontend.log
 
       - name: Check frontend port
         run: |
