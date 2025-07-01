@@ -44,8 +44,8 @@ jobs:
         uses: sonarsource/sonarcloud-github-action@v2.0.0
         with:
           args: >
-            -Dsonar.projectKey=clariveljeldres_evaluacionm4
-            -Dsonar.organization=clariveljeldres
+            -Dsonar.projectKey=Clariveljn_EvaluacionM4
+            -Dsonar.organization=clariveljn
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
             -Dsonar.projectBaseDir=backend
