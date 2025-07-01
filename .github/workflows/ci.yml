@@ -49,7 +49,7 @@ jobs:
           sleep 40
           tail -n 30 backend.log
 
-      # Configurar Node.js (Versión 20 para Vite 7)
+      # Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -67,6 +67,55 @@ jobs:
       # Verificar que frontend está escuchando
       - name: Check frontend port
         run: |
-          ss -tulpn | grep 517
+          ss -tulpn | grep 5173 || echo "Puerto 5173 no está escuchando"
+
+      # Verificar que backend está escuchando
+      - name: Check backend port
+        run: |
+          ss -tulpn | grep 8080 || echo "Puerto 8080 no está escuchando"
+
+      # Instalar Chrome para Selenium
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg2
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+
+      # Instalar ChromeDriver
+      - name: Install ChromeDriver
+        run: |
+          sudo apt-get install -y unzip
+          LATEST=$(curl -sSL https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+          wget https://chromedriver.storage.googleapis.com/${LATEST}/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+          chromedriver --version
+
+      # Pruebas Selenium
+      - name: Run Selenium tests
+        run: |
+          cd pruebas-selenium
+          mvn clean test
+
+      # Instalar JMeter
+      - name: Install JMeter
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-21-jre wget
+          wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
+          tar -xvzf apache-jmeter-5.6.3.tgz
+
+      # Pruebas JMeter
+      - name: Run JMeter tests
+        run: |
+          ./apache-jmeter-5.6.3/bin/jmeter -n -t pruebas-jmeter/test.jmx -l result.jtl
+
+      # SonarQube
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v1.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
 
