@@ -37,7 +37,7 @@ jobs:
       - name: Build and test backend (JUnit)
         run: |
           cd backend
-          clean install
+          mvn clean install
 
       - name: Run Selenium tests
         run: |
