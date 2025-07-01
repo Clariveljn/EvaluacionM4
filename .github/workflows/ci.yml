@@ -11,18 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Checkout repositorio
+      # Clonar repositorio
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # ✅ Configurar JDK
+      # Configurar JDK
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # ✅ Cache de dependencias Maven
+      # Cache Maven
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -31,28 +31,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # ✅ Compilar backend
-      - name: Build with Maven
+      # Compilar backend
+      - name: Build backend
         run: mvn -f backend/pom.xml clean install -DskipTests
 
-      # ✅ Ejecutar pruebas unitarias
+      # Pruebas Unitarias
       - name: Run Unit Tests
         run: mvn -f backend/pom.xml test
 
-      # ✅ Análisis con SonarCloud
+      # Análisis SonarCloud
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@v2.0.0
         with:
           args: >
-            -Dsonar.projectKey=Clariveljn_EvaluacionM4
-            -Dsonar.organization=clariveljn
+            -Dsonar.projectKey=clariveljeldres_evaluacionm4
+            -Dsonar.organization=clariveljeldres
             -Dsonar.host.url=https://sonarcloud.io
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
             -Dsonar.projectBaseDir=backend
-        env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-      # ✅ Instalar Google Chrome para Selenium
+      # Instalar Google Chrome para Selenium
       - name: Install Google Chrome
         run: |
           sudo apt update
@@ -61,25 +59,25 @@ jobs:
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
           rm google-chrome-stable_current_amd64.deb
 
-      # ✅ Ejecutar pruebas Selenium
+      # Pruebas Selenium
       - name: Run Selenium Tests
         run: mvn -f pruebas-selenium/pom.xml test
 
-      # ✅ Instalar JMeter
+      # Instalar JMeter
       - name: Install JMeter
         run: |
           sudo apt update
           sudo apt install -y jmeter
 
-      # ✅ Ejecutar pruebas de rendimiento con JMeter
+      # Ejecutar pruebas de rendimiento con JMeter
       - name: Run JMeter Test
-        working-directory: pruebas-jmeter
         run: |
-          jmeter -n -t healthtrack.jmx -l resultados.jtl -j jmeter.log
+          jmeter -n -t pruebas-jmeter/healthtrack.jmx -l pruebas-jmeter/resultados.jtl -j pruebas-jmeter/jmeter.log
 
-      # ✅ Subir resultados de JMeter como artefacto
+      # Subir resultados de JMeter
       - name: Upload JMeter Results
         uses: actions/upload-artifact@v4
         with:
           name: jmeter-results
           path: pruebas-jmeter/resultados.jtl
+
